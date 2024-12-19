@@ -35,7 +35,7 @@ def lms_filter(desired, x, mu, filter_order):
         w += 2 * mu * e[n] * x_n  # Actualización de coeficientes
     return y, e, w
 
-def butter_lowpass_filter(data, cutoff, fs, order=5):
+def butter_lowpass_filter(data, cutoff, fs, order):
     """
     Aplica un filtro pasa bajas Butterworth a los datos.
     :param data: Señal de entrada.
@@ -94,16 +94,16 @@ disturbance = amplitude_disturbance * np.sin(2 * np.pi * freq_disturbance * t)
 signal_total = noise + disturbance
 
 # Transferencia del micrófono de error
-mic_output = butter_lowpass_filter(noise, cutoff=7900, fs=fs, order=6)  # Frecuencia de corte: 20 kHz
+mic_output = butter_lowpass_filter(signal_total, cutoff=7900, fs=fs, order=6)  # Frecuencia de corte original: 20 kHz
 
 # Algoritmo LMS con salida del micrófono
 mu = config.get('mu',0.01) #factor de aprendizaje: Uno más bajo aumenta la estabilidad, disminuyendo la performance del ANC
 filter_order = int(config.get('fo',32))
-reference_signal = noise
+reference_signal = signal_total
 output_signal, error_signal, _ = lms_filter(mic_output, reference_signal, mu, filter_order)
 
 # Transferencia del altavoz de cancelación
-speaker_output = butter_lowpass_filter(output_signal, cutoff=7900, fs=fs, order=6)  # Frecuencia de corte: 10 kHz
+speaker_output = butter_lowpass_filter(output_signal, cutoff=7900, fs=fs, order=6)  # Frecuencia de corte original: 10 kHz
 
 # Señal después del sistema ANC
 anc_output = mic_output - speaker_output
